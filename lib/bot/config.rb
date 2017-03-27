@@ -9,8 +9,8 @@ SLACK_CONFIG = {
 missing_params = SLACK_CONFIG.select { |_, v| v.nil? }
 raise "Missing Slack config: #{missing_params.keys.join(', ').upcase}" if missing_params.any?
 
-raise 'Missing REDIS_URI' if ENV['REDIS_URI'].nil?
+raise 'Missing REDIS_URL' if ENV['REDIS_URL'].nil?
 
 raise 'Missing DIP_ADMIN' if ENV['DIP_ADMIN'].nil?
 
-$redis = Redis.new(url: ENV['REDIS_URI'])
+$redis = Redis.new(url: ENV['REDIS_URL'])
