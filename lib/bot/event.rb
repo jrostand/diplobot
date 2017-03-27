@@ -10,23 +10,20 @@ module Bot
         end
 
         case
-        when event[:text][0] == '!'
+        when event[:channel][0] == 'C' && event[:text][0] == '!'
           AdminEvent.dispatch event
-        when event[:channel][0] == 'D' && event[:text] =~ /^help$/i
-          help_msg(event[:channel])
-        when event[:channel][0] == 'D' && event[:text] =~ /^o(rders?)?\s/i
-          Order.new(event).process!
-        when event[:channel][0] == 'D' && event[:text] =~ /^n(ews)?\s/i
-          News.new(event).process!
-        when event[:channel][0] == 'D' && event[:text] =~ /^clear$/i
-          clear_orders event
-        when event[:channel][0] == 'D' && event[:text] =~ /^spike$/i
-          spike_news event
-        when event[:channel][0] == 'D' && event[:text] =~ /^whoami$/i
-          whoami event
+        when event[:channel][0] == 'D'
+          case
+          when event[:text] =~ /^help$/i then help_msg(event[:channel])
+          when event[:text] =~ /^o(rders?)?\s/i then Order.new(event).process!
+          when event[:text] =~ /^n(ews)?\s/i then News.new(event).process!
+          when event[:text] =~ /^clear$/i then clear_orders event
+          when event[:text] =~ /^spike$/i then spike_news event
+          when event[:text] =~ /^whoami$/i then whoami event
+          end
         else
           if event[:channel][0] == 'D'
-            Util.message event[:channel], "I don't know what you mean by \"#{event[:text]}\""
+            Util.message event[:channel], "I don't know what you meant by \"#{event[:text]}\""
           end
         end
       end
