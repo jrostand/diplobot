@@ -6,7 +6,6 @@ GEM
       i18n (~> 0.7)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
-    coderay (1.1.1)
     concurrent-ruby (1.0.5)
     faraday (0.11.0)
       multipart-post (>= 1.2, < 3)
@@ -16,13 +15,8 @@ GEM
     hashie (3.5.5)
     i18n (0.8.1)
     json (2.0.3)
-    method_source (0.8.2)
     minitest (5.10.1)
     multipart-post (2.0.0)
-    pry (0.10.4)
-      coderay (~> 1.1.0)
-      method_source (~> 0.8.1)
-      slop (~> 3.4)
     rack (1.6.5)
     rack-protection (1.5.3)
       rack
@@ -39,7 +33,6 @@ GEM
       hashie
       json
       websocket-driver
-    slop (3.6.0)
     thread_safe (0.3.6)
     tilt (2.0.7)
     tzinfo (1.2.2)
@@ -52,10 +45,12 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  pry
   redis
   sinatra
   slack-ruby-client
+
+RUBY VERSION
+   ruby 2.4.1p111
 
 BUNDLED WITH
    1.14.6
