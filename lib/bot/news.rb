@@ -8,13 +8,13 @@ module Bot
     end
 
     def self.display!(channel)
-      unless Util.orders_open?
-        Util.message channel, 'I cannot publish a gazette until orders are open'
+      unless Util.news_open?
+        Util.message channel, 'I cannot publish a gazette unless submissions are open.'
         return
       end
 
       if $redis.hlen('news') == 0
-        Util.message channel, 'I do not have any stories to publish'
+        Util.message channel, 'I do not have any stories to publish.'
         return
       end
 
@@ -38,7 +38,7 @@ module Bot
     end
 
     def process!
-      if Util.orders_open?
+      if Util.news_open?
         store_story
       else
         msg "I'm not currently accepting news stories"

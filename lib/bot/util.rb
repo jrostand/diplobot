@@ -20,6 +20,10 @@ module Bot
         $redis.hkeys('nations').include? Util.userinfo(uid).name
       end
 
+      def news_open?
+        $redis.get('news_status') == 'open'
+      end
+
       def orders_open?
         $redis.get('orders_status') == 'open'
       end
