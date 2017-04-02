@@ -12,5 +12,5 @@ require_relative './bot/news'
 require_relative './bot/order'
 
 module Bot
-  Knowledge.fetch!
+  Knowledge.learn!
 end

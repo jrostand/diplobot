@@ -13,11 +13,11 @@ module Bot
       end
 
       def is_admin?(uid)
-        userinfo(uid).name == ENV['DIP_ADMIN']
+        uid == $admin
       end
 
       def is_player?(uid)
-        $redis.hkeys('nations').include? Util.userinfo(uid).name
+        $redis.hkeys('players').include? uid
       end
 
       def news_open?
@@ -26,6 +26,17 @@ module Bot
 
       def orders_open?
         $redis.get('orders_status') == 'open'
+      end
+
+      def oxfordise(list)
+        case list.size
+        when 0 then 'no one'
+        when 1 then list.first
+        when 2 then list.join(' and ')
+        else
+          list.last.prepend('and ')
+          list.join(', ')
+        end
       end
 
       def tag_user(user)

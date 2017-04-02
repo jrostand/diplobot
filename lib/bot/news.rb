@@ -7,65 +7,75 @@ module Bot
       @uid = @event[:user]
     end
 
-    def self.display!(channel)
-      unless Util.news_open?
-        Util.message channel, 'I cannot publish a gazette unless submissions are open.'
+    def player_news
+      stories = $redis.smembers "news:#{nation}"
+
+      if !Util.news_open?
+        msg 'The presses are currently stopped.'
+      elsif stories.size == 0
+        msg 'You have not submitted any stories.'
+      else
+        msg "_Here are your current stories as they will appear in the gazette_\n#{News.format(nation, stories)}"
+      end
+    end
+
+    def self.publish!(channel)
+      if !Util.news_open?
+        Util.message channel, 'I cannot publish a gazette while the presses are stopped.'
         return
       end
 
-      if $redis.hlen('news') == 0
+      if $redis.keys('news:*').size == 0
         Util.message channel, 'I do not have any stories to publish.'
         return
       end
 
-      all_stories = []
-
-      $redis.hkeys('news').each do |nation|
-        stories = JSON.parse($redis.hget('news', nation)).map do |story|
-          "*From #{nation}:* \"#{story}\""
-        end
-
-        all_stories += stories
-      end
-
       output = ['_Here are the latest headlines from around Europe_']
 
-      output += all_stories.shuffle
+      $redis.keys("news:*").each do |key|
+        stories = $redis.smembers key
+        country = key.match(/:(\w+)$/)[1]
 
-      $redis.del 'news'
+        output << News.format(country, stories)
+
+        $redis.del key
+      end
 
       Util.message channel, output.join("\n")
     end
 
-    def process!
+    def store!
       if Util.news_open?
         store_story
       else
-        msg "I'm not currently accepting news stories"
+        msg 'I am not currently accepting news stories'
       end
     end
 
     private
 
+    def self.format(country, stories)
+      output = []
+
+      output += stories.map { |story| "*From #{country}:* \"#{story}\"" }
+
+      output.join("\n")
+    end
+
     def msg(text)
       Util.message(@channel, text)
     end
 
+    def nation
+      @nation ||= $redis.hget 'players', @uid
+    end
+
     def store_story
-      username = Util.userinfo(@uid).name
-      nation = $redis.hget('nations', username)
-
-      stories = if $redis.hexists('news', nation)
-                 JSON.parse($redis.hget('news', nation))
-               else
-                 []
-               end
-
-      stories << @text
-
-      $redis.hset('news', nation, JSON.generate(stories))
-
-      msg "I have stored your \"#{@text}\" story"
+      if $redis.sadd "news:#{nation}", @text
+        msg "I have stored your \"#{@text}\" story"
+      else
+        msg "It looks like I already had \"#{@text}\" stored. You can say `mystories` to see your current news stories."
+      end
     end
   end
 end

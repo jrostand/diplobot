@@ -17,12 +17,14 @@ module Bot
         when '!reveal'
           Order.reveal! event[:channel]
         when '!news'
-          News.display! event[:channel]
+          News.publish! event[:channel]
         when '!startpress'
           allow_news true
           Util.message(event[:channel], 'Extra! Extra! I am now accepting news submissions!')
         when '!state'
           show_state event[:channel]
+        when '!players'
+          show_players event[:channel]
         when '!stoppress'
           allow_news false
           Util.message(event[:channel], 'Stop the presses! I am no longer accepting news submissions!')
@@ -38,10 +40,16 @@ module Bot
 
       def abuse!(channel, user)
         lines = [
-          "You're not my real dad, #{Util.tag_user(user)}!",
-          "You can't just order me around, #{Util.tag_user(user)}.",
-          "I don't have to listen to you, #{Util.tag_user(user)}!",
-          "Who do you think you are to command me, #{Util.tag_user(user)}?"
+          "You're not my real dad!",
+          "You can't just order me around.",
+          "I don't have to listen to you!",
+          "Who do you think you are?",
+          "You're not my supervisor!",
+          "#{Util.tag_user($admin)} I need an adult!",
+          "Stop trying to get me to do things.",
+          "Quit poking me there, I don't like it.",
+          "You're just not my type, #{Util.tag_user(user)}.",
+          "I'm just checking my state now... how about that? It *doesn't* say, \"#{Util.tag_user(user)} is my administrator.\""
         ]
 
         Util.message(channel, lines.shuffle.first)
@@ -67,6 +75,7 @@ module Bot
           !close      - Close bot to orders and stories
           !help       - Display this message
           !news       - Publish a gazette of all available headlines
+          !players    - Display the player mapping (WARNING: will notify the users)
           !open       - Accept orders and news stories
           !reveal     - Reveal all orders (only if closed)
           !startpress - Allow news story submissions
@@ -78,24 +87,28 @@ module Bot
         Util.message(channel, output)
       end
 
+      def show_players(channel)
+        Util.message channel, "My player map is ( #{ENV['USER_MAP']} )."
+      end
+
       def show_state(channel)
         output = []
 
-        output << "My player map is ( #{ENV['USER_MAP']} )."
-
         if Util.news_open?
-          output << "There are #{$redis.hlen('news')} news stories ready for the gazette."
+          keys = $redis.keys('news:*')
+          output << "There are #{keys.size == 0 ? 'no' : $redis.sunion(*keys).size} news stories ready for the gazette."
         else
           output << 'The presses are stopped.'
         end
 
         if Util.orders_open?
-          output << "I am accepting orders and have received them from #{$redis.hlen('orders')} players."
+          countries = $redis.keys('orders:*').map { |key| key.split(':').last }
+          output << "I am accepting orders and have received them from #{Util.oxfordise(countries)}."
         else
           output << 'I am not accepting orders.'
         end
 
-        output << "#{Util.tag_user(ENV['DIP_ADMIN'])} is my administrator."
+        output << "#{Util.tag_user($admin)} is my administrator."
 
         Util.message channel, output.join(' ')
       end
