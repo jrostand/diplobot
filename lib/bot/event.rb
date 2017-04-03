@@ -4,15 +4,15 @@ module Bot
       def dispatch(event)
         return if !event[:bot_id].nil? || event[:user] == $redis.get('bot_user')
 
-        if !Util.is_player?(event[:user])
-          Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.tag_user($admin)} if this is not correct."
-          return
-        end
-
         case
         when event[:channel][0] == 'C' && event[:text][0] == '!'
           AdminEvent.dispatch event
         when event[:channel][0] == 'D'
+          if !Util.is_player?(event[:user])
+            Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.tag_user($admin)} if this is not correct."
+            return
+          end
+
           case
           when event[:text] =~ /^help$/i then help_msg(event[:channel])
           when event[:text] =~ /^o(rders?)?\s/i then Order.new(event).store!
