@@ -83,7 +83,7 @@ module Bot
 
         stories = $redis.smembers("news:#{nation}").join(', ')
 
-        if orders.size == 0
+        if stories.size == 0
           Util.message(event[:channel], 'You had no stories to spike')
         else
           Util.message(event[:channel], "I have spiked your headlines. They were: #{stories}")
