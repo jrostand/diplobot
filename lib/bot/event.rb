@@ -31,6 +31,11 @@ module Bot
             Util.message event[:channel], "I don't know what you meant by \"#{event[:text]}\""
           end
         end
+      rescue => e
+        Util.message(
+          Util.im_channel($admin),
+          "I threw up a little. Exception message: `#{e.message}`.\n```\n#{event}\n```\n```\n#{e.stacktrace}\n```"
+        )
       end
 
       private
