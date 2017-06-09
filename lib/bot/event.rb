@@ -9,7 +9,7 @@ module Bot
           AdminEvent.dispatch event
         when event[:channel][0] == 'D'
           if !Util.is_player?(event[:user])
-            Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.tag_user($admin)} if this is not correct."
+            Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.oxfordise($admin_tags, 'or')} if this is not correct."
             return
           end
 
@@ -33,7 +33,7 @@ module Bot
         end
       rescue => e
         Util.message(
-          Util.im_channel($admin),
+          Util.im_channel($admins.first),
           "I threw up a little. Exception message: `#{e.message}`.\n```\n#{event}\n```\n```\n#{e.stacktrace}\n```"
         )
       end
@@ -78,7 +78,7 @@ module Bot
         text = event[:text].split[1..-1].join(' ')
 
         Util.message(
-          Util.im_channel($admin),
+          Util.im_channel($admins.first),
           "#{Util.tag_user(event[:user])} ran into a problem. They said: '#{text}'"
         )
       end
@@ -100,7 +100,7 @@ module Bot
       def whoami(event)
         nation = $redis.hget('players', event[:user])
 
-        Util.message(event[:channel], "My user mapping says that you are #{nation}. Contact #{Util.tag_user($admin)} if this is not correct.")
+        Util.message(event[:channel], "My user mapping says that you are #{nation}. Contact #{Util.oxfordise($admin_tags, 'or')} if this is not correct.")
       end
     end
   end

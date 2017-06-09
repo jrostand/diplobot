@@ -4,7 +4,13 @@ module Bot
       def learn!
         return unless $redis.get 'bot_token'
 
-        $admin = Util.user_id(ENV['DIP_ADMIN'])
+        $admins = []
+
+        ENV['DIP_ADMINS'].strip.split(',').each do |admin|
+          $admins << Util.user_id(admin)
+        end
+
+        $admin_tags = $admins.map { |admin| Util.tag_user(admin) }
 
         map_users
         ready_msg!
@@ -29,9 +35,9 @@ module Bot
       end
 
       def ready_msg!
-        imid = Util.im_channel $admin
+        imid = Util.im_channel $admins.first
 
-        Util.message imid, 'DiploBot awaiting orders'
+        Util.message imid, 'DiploBot is ready for commands. You are the prime administrator.'
       end
     end
   end

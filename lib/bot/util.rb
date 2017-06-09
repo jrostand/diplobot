@@ -13,7 +13,7 @@ module Bot
       end
 
       def is_admin?(uid)
-        uid == $admin
+        $admins.include? uid
       end
 
       def is_player?(uid)
@@ -28,13 +28,13 @@ module Bot
         $redis.get('orders_status') == 'open'
       end
 
-      def oxfordise(list)
+      def oxfordise(list, join_word = 'and')
         case list.size
         when 0 then 'no one'
         when 1 then list.first
-        when 2 then list.join(' and ')
+        when 2 then list.join(" #{join_word} ")
         else
-          list.last.prepend('and ')
+          list.last.prepend("#{join_word} ")
           list.join(', ')
         end
       end

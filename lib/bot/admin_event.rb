@@ -45,7 +45,7 @@ module Bot
           "I don't have to listen to you!",
           "Who do you think you are?",
           "You're not my supervisor!",
-          "#{Util.tag_user($admin)} I need an adult!",
+          "#{Util.tag_user($admins.shuffle.first)} I need an adult!",
           "Stop trying to get me to do things.",
           "Quit poking me there, I don't like it.",
           "You're just not my type, #{Util.tag_user(user)}.",
@@ -72,11 +72,11 @@ module Bot
           ```
           Here are the available admin commands:
 
-          !close      - Close bot to orders and stories
+          !close      - Close bot to orders
           !help       - Display this message
           !news       - Publish a gazette of all available headlines
           !players    - Display the player mapping (WARNING: will notify the users)
-          !open       - Accept orders and news stories
+          !open       - Open bot to orders
           !reveal     - Reveal all orders (only if closed)
           !startpress - Allow news story submissions
           !state      - Display the bot's state
@@ -108,7 +108,7 @@ module Bot
           output << 'I am not accepting orders.'
         end
 
-        output << "#{Util.tag_user($admin)} is my administrator."
+        output << "My administrators are #{Util.oxfordise($admin_tags)},"
 
         Util.message channel, output.join(' ')
       end
