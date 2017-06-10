@@ -5,6 +5,19 @@ module Bot
         client.message(channel, text)
       end
 
+      def add_admin(username)
+        uid = user_id(username)
+        $redis.sadd('admins', uid)
+      end
+
+      def admins
+        $redis.smembers('admins')
+      end
+
+      def admin_tags
+        admins.map { |admin| tag_user(admin) }
+      end
+
       def allow_news(bool)
         status = bool ? 'open' : 'closed'
 
@@ -17,12 +30,25 @@ module Bot
         $redis.set 'orders_status', status
       end
 
+      def cache_users
+        $users = client.users_list.members.map do |user|
+          {
+            id: user.id,
+            username: user.name
+          }
+        end
+      end
+
       def im_channel(uid)
-        client.im_list.ims.find { |i| i.user == uid }.id
+        unless $im_cache[uid]
+          $im_cache[uid] = client.im_list.ims.find { |i| i.user == uid }.id
+        end
+
+        $im_cache[uid]
       end
 
       def is_admin?(uid)
-        $admins.include? uid
+        admins.include? uid
       end
 
       def is_player?(uid)
@@ -48,6 +74,14 @@ module Bot
         end
       end
 
+      def remove_admin(username)
+        uid = user_id(username)
+
+        raise InvalidUserError if uid == $chief_admin
+
+        $redis.srem('admins', uid)
+      end
+
       def tag_user(user)
         unless user =~ /^U/
           user = user_id(user)
@@ -65,11 +99,13 @@ module Bot
       end
 
       def user_id(username)
-        client.users_list.members.find { |u| u.name == username }.id
-      end
+        if user = $users.find { |u| u[:username] == username }
+          user[:id]
+        else
+          cache_users
 
-      def userinfo(uid)
-        client.users_info(user: uid).user
+          $users.find { |u| u[:username] == username }[:id] || raise(NotFoundError, "Could not find user `#{username}`")
+        end
       end
 
       private

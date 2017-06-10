@@ -19,8 +19,8 @@ module Bot
       method(@command.to_sym).call(*@args)
     end
 
-    def method_missing(sym)
-      Util.message(Util.im_channel(@user), "I don't know what you meant by `#{@command}`")
+    def method_missing(sym, *args)
+      Util.message(Util.im_channel(@user), "`#{@command}` is not a command")
     end
 
     def respond_to_missing?(sym, include_private = false)
@@ -40,13 +40,28 @@ module Bot
       @channel.msg 'Orders are no longer being accepted'
     end
 
+    def deop(user)
+      Util.remove_admin user
+
+      @channel.msg "#{user} is no longer an administrator."
+    rescue Bot::InvalidUserError
+      @channel.msg "You cannot de-op the chief administrator."
+
+      Util.message(
+        Util.im_channel($chief_admin),
+        "#{Util.tag_user(@user)} tried to de-op you. I won't let that happen."
+      )
+    end
+
     def help
       output = <<~EOF
         ```
         !close      - Close bot to orders
+        !deop USER  - Remove USER as an admin
         !help       - Display this message
         !news       - Publish a gazette of all available headlines
         !players    - Display the player mapping (may notify the users)
+        !op USER    - Add USER as an admin
         !open       - Open bot to orders
         !reveal     - Reveal all orders (only if closed)
         !startpress - Allow news story submissions
@@ -62,6 +77,12 @@ module Bot
       channel_only!
 
       News.publish! @channel.id
+    end
+
+    def op(user)
+      Util.add_admin user
+
+      @channel.msg "I have added #{user} as an administrator."
     end
 
     def open
@@ -105,10 +126,10 @@ module Bot
         output << 'I am not accepting orders.'
       end
 
-      if $admin_tags.length == 1
-        output << "My administrator is #{Util.oxfordise($admin_tags)}."
+      if Util.admins.length == 1
+        output << "My administrator is #{Util.oxfordise(Util.admin_tags)}."
       else
-        output << "My administrators are #{Util.oxfordise($admin_tags)}."
+        output << "My administrators are #{Util.oxfordise(Util.admin_tags)}."
       end
 
       @channel.msg output.join(' ')

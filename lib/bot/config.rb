@@ -14,7 +14,7 @@ module Bot
 
       raise ArgumentError, 'Missing REDIS_URL' if ENV['REDIS_URL'].nil?
 
-      raise ArgumentError, 'Missing DIP_ADMINS' if ENV['DIP_ADMINS'].nil?
+      raise ArgumentError, 'Missing CHIEF_ADMIN' if ENV['CHIEF_ADMIN'].nil?
 
       $redis = Redis.new(url: ENV['REDIS_URL'])
     end

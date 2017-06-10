@@ -48,13 +48,13 @@ RSpec.describe 'Configuration' do
       end
     end
 
-    context 'when administrators are missing' do
+    context 'when chief admin is missing' do
       before { ENV['REDIS_URL'] = 'redis://localhost' }
 
       it 'fails with a message' do
         expect {
           Bot::Config.start!
-        }.to raise_error(ArgumentError, "Missing DIP_ADMINS")
+        }.to raise_error(ArgumentError, "Missing CHIEF_ADMIN")
       end
     end
   end

@@ -19,8 +19,8 @@ module Bot
       })
     end
 
-    def users_info
-      $client.users_info
+    def users_info(opts)
+      $client.users_info(opts)
     end
 
     def users_list

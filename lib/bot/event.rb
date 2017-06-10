@@ -37,7 +37,7 @@ module Bot
         abuse!(event)
       rescue => e
         Util.message(
-          Util.im_channel($admins.first),
+          Util.im_channel($chief_admin),
           "I threw up a little. Exception message: `#{e.message.gsub(/`/, "'")}`.\n```\n#{event}\n```\n```\n#{e.backtrace.take(10).join("\n")}\n```"
         )
       end
@@ -53,7 +53,7 @@ module Bot
           "I don't have to listen to you!",
           "Who do you think you are?",
           "You're not my supervisor!",
-          "#{Util.tag_user($admins.shuffle.first)} I need an adult!",
+          "#{Util.tag_user(Util.admins.shuffle.first)} I need an adult!",
           "Stop trying to get me to do things.",
           "Quit poking me there, I don't like it.",
           "You're just not my type, #{Util.tag_user(user)}.",
@@ -101,7 +101,7 @@ module Bot
         text = event[:text].split[1..-1].join(' ')
 
         Util.message(
-          Util.im_channel($admins.first),
+          Util.im_channel($chief_admin),
           "#{Util.tag_user(event[:user])} ran into a problem. They said: '#{text}'"
         )
       end

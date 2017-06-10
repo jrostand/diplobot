@@ -1,17 +1,15 @@
 require_relative '../../lib/bot/util'
 
 RSpec.describe Bot::Util do
-  describe '.is_admin?' do
+  describe '.admins' do
     before do
-      $admins = %w(U1234ASDF U4321TEST)
+      $redis = spy('redis')
     end
 
-    it 'is true when found' do
-      expect(described_class.is_admin?('U4321TEST')).to be true
-    end
+    it 'calls to Redis to get all admins' do
+      Bot::Util.admins
 
-    it 'is false when not found' do
-      expect(described_class.is_admin?('U5678ZXCV')).to be false
+      expect($redis).to have_received(:smembers).with('admins')
     end
   end
 
