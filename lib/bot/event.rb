@@ -9,7 +9,7 @@ module Bot
           AdminEvent.new event
         when event[:channel][0] == 'D'
           if !Util.is_player?(event[:user])
-            Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.oxfordise($admin_tags, 'or')} if this is not correct."
+            Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.oxfordise(Util.admin_tags, 'or')} if this is not correct."
             return
           end
 
@@ -123,7 +123,7 @@ module Bot
       def whoami(event)
         nation = $redis.hget('players', event[:user])
 
-        Util.message(event[:channel], "My user mapping says that you are #{nation}. Contact #{Util.oxfordise($admin_tags, 'or')} if this is not correct.")
+        Util.message(event[:channel], "My user mapping says that you are #{nation}. Contact #{Util.oxfordise(Util.admin_tags, 'or')} if this is not correct.")
       end
     end
   end

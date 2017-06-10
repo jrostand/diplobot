@@ -26,7 +26,7 @@ module Bot
       end
 
       if $redis.keys('orders:*').size == 0
-        Util.message channel, "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($admins.first)} I'm scared! :fearful: :fearful: :fearful:"
+        Util.message channel, "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($chief_admin)} I'm scared! :fearful: :fearful: :fearful:"
         return
       end
 
