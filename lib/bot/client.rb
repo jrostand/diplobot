@@ -1,11 +1,30 @@
 module Bot
   class Client
-    def self.init
+    def initialize
       Slack.configure do |config|
         config.token = $redis.get 'bot_token'
       end
 
-      Slack::Web::Client.new
+      $client ||= Slack::Web::Client.new
+    end
+
+    def im_list
+      $client.im_list
+    end
+
+    def message(channel, text)
+      $client.chat_postMessage({
+        channel: channel,
+        text: text
+      })
+    end
+
+    def users_info(opts)
+      $client.users_info(opts)
+    end
+
+    def users_list
+      $client.users_list
     end
   end
 end

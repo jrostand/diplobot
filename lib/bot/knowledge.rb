@@ -4,15 +4,23 @@ module Bot
       def learn!
         return unless $redis.get 'bot_token'
 
-        $admin = Util.user_id(ENV['DIP_ADMIN'])
+        cache_users!
 
-        map_users
+        setup_admins!
+
+        map_users!
+
         ready_msg!
       end
 
       private
 
-      def map_users
+      def cache_users!
+        Util.cache_users
+        $im_cache = {}
+      end
+
+      def map_users!
         $redis.del 'players'
 
         raise 'No USER_MAP found' if ENV['USER_MAP'].nil?
@@ -29,9 +37,15 @@ module Bot
       end
 
       def ready_msg!
-        imid = Util.im_channel $admin
+        imid = Util.im_channel $chief_admin
 
-        Util.message imid, 'DiploBot awaiting orders'
+        Util.message imid, 'DiploBot is ready for commands. You are the chief administrator.'
+      end
+
+      def setup_admins!
+        $chief_admin = Util.user_id(ENV['CHIEF_ADMIN'])
+
+        $redis.sadd 'admins', $chief_admin
       end
     end
   end

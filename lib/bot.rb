@@ -1,7 +1,10 @@
+require_relative './bot/errors'
+
 require_relative './bot/config'
 require_relative './bot/client'
 require_relative './bot/util'
 
+require_relative './bot/channel'
 require_relative './bot/knowledge'
 
 require_relative './bot/auth'
@@ -12,5 +15,6 @@ require_relative './bot/news'
 require_relative './bot/order'
 
 module Bot
+  Config.start!
   Knowledge.learn!
 end
