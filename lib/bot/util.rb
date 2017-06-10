@@ -2,10 +2,19 @@ module Bot
   class Util
     class << self
       def message(channel, text)
-        client.chat_postMessage({
-          channel: channel,
-          text: text
-        })
+        client.message(channel, text)
+      end
+
+      def allow_news(bool)
+        status = bool ? 'open' : 'closed'
+
+        $redis.set 'news_status', status
+      end
+
+      def allow_orders(bool)
+        status = bool ? 'open' : 'closed'
+
+        $redis.set 'orders_status', status
       end
 
       def im_channel(uid)
@@ -66,7 +75,7 @@ module Bot
       private
 
       def client
-        @client ||= Client.init
+        @client ||= Client.new
       end
     end
   end

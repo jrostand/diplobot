@@ -5,8 +5,8 @@ module Bot
         return if !event[:bot_id].nil? || event[:user] == $redis.get('bot_user')
 
         case
-        when event[:channel][0] == 'C' && event[:text][0] == '!'
-          AdminEvent.dispatch event
+        when event[:text][0] == '!'
+          AdminEvent.new event
         when event[:channel][0] == 'D'
           if !Util.is_player?(event[:user])
             Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.oxfordise($admin_tags, 'or')} if this is not correct."
@@ -31,14 +31,37 @@ module Bot
             Util.message event[:channel], "I don't know what you meant by \"#{event[:text]}\""
           end
         end
+      rescue Bot::InvalidChannelError => e
+        Util.message(event[:channel], "The `#{event[:text].split.first}` command doesn't work here.")
+      rescue Bot::NotAuthorizedError => e
+        abuse!(event)
       rescue => e
         Util.message(
           Util.im_channel($admins.first),
-          "I threw up a little. Exception message: `#{e.message}`.\n```\n#{event}\n```\n```\n#{e.stacktrace}\n```"
+          "I threw up a little. Exception message: `#{e.message.gsub(/`/, "'")}`.\n```\n#{event}\n```\n```\n#{e.backtrace.take(10).join("\n")}\n```"
         )
       end
 
       private
+
+      def abuse!(event)
+        user = event[:user]
+
+        lines = [
+          "You're not my real dad!",
+          "You can't just order me around.",
+          "I don't have to listen to you!",
+          "Who do you think you are?",
+          "You're not my supervisor!",
+          "#{Util.tag_user($admins.shuffle.first)} I need an adult!",
+          "Stop trying to get me to do things.",
+          "Quit poking me there, I don't like it.",
+          "You're just not my type, #{Util.tag_user(user)}.",
+          "I'm just checking my state now... how about that? It *doesn't* say, \"#{Util.tag_user(user)} is my administrator.\""
+        ]
+
+        Util.message(event[:channel], lines.shuffle.first)
+      end
 
       def clear_orders(event)
         nation = $redis.hget('players', event[:user])
