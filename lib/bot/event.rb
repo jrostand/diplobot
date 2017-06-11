@@ -3,6 +3,7 @@ module Bot
     class << self
       def dispatch(event)
         return if !event[:bot_id].nil? || event[:user] == $redis.get('bot_user')
+        return unless event[:text]
 
         case
         when event[:text][0] == '!'
