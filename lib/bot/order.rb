@@ -8,7 +8,7 @@ module Bot
     end
 
     def clear!
-      orders = $redis.smembers("orders:#{nation}").join(', ')
+      orders = $redis.smembers("orders:#{nation}").join(' ; ')
 
       if locked?
         msg 'You have locked in your orders and cannot clear them'
