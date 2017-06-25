@@ -77,9 +77,10 @@ module Bot
         orders = $redis.smembers "orders:#{country}"
 
         output << Order.format(country, orders)
-
-        $redis.del key
       end
+
+      $redis.del(*$redis.keys('orders:*'))
+      $redis.del(*$redis.keys('lock:*'))
 
       Util.message channel, output.join("\n")
     end
