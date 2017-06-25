@@ -7,6 +7,41 @@ module Bot
       @uid = @event[:user]
     end
 
+    def clear!
+      orders = $redis.smembers("orders:#{nation}").join(', ')
+
+      if locked?
+        msg 'You have locked in your orders and cannot clear them'
+      elsif orders.size == 0
+        msg 'You had no orders to clear'
+      else
+        msg "I have cleared your previous orders. They were: #{orders}"
+      end
+
+      $redis.del "orders:#{nation}"
+    end
+
+    def lock!
+      if locked?
+        msg 'You have already locked in your orders'
+        return
+      elsif !Util.orders_open?
+        msg 'Orders are not currently being accepted'
+        return
+      elsif $redis.scard("orders:#{nation}") == 0
+        msg 'You have not submitted any orders'
+        return
+      end
+
+      $redis.set "lock:#{nation}", 'true'
+      msg 'Your orders have been locked in'
+      player_orders
+    end
+
+    def locked?
+      !!$redis.get("lock:#{nation}")
+    end
+
     def player_orders
       orders = $redis.smembers "orders:#{nation}"
 
@@ -25,16 +60,21 @@ module Bot
         return
       end
 
+      if $redis.keys('lock:*').size == 0
+        Util.message channel, 'No nation locked in their orders, all units will *hold*.'
+        return
+      end
+
       if $redis.keys('orders:*').size == 0
         Util.message channel, "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($chief_admin)} I'm scared! :fearful: :fearful: :fearful:"
         return
       end
 
-      output = ['_Here are the orders I received_']
+      output = ['_Here are the locked-in orders I received_']
 
-      $redis.keys("orders:*").each do |key|
-        orders = $redis.smembers key
+      $redis.keys("lock:*").each do |key|
         country = key.match(/:(\w+)$/)[1]
+        orders = $redis.smembers "orders:#{country}"
 
         output << Order.format(country, orders)
 
@@ -46,6 +86,11 @@ module Bot
 
     def store!
       if Util.orders_open?
+        if locked?
+          msg "You have already locked in your orders. Only an administrator can unlock them."
+          return
+        end
+
         @text =~ /;/ ? store_orders : store_order
       else
         msg "I'm not currently accepting orders"

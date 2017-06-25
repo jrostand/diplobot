@@ -33,6 +33,10 @@ module Bot
       raise InvalidChannelError if @channel.is_dm?
     end
 
+    def dm_only!
+      raise InvalidChannelError unless @channel.is_dm?
+    end
+
     def close
       channel_only!
 
@@ -56,17 +60,18 @@ module Bot
     def help
       output = <<~EOF
         ```
-        !close      - Close bot to orders
-        !deop USER  - Remove USER as an admin
-        !help       - Display this message
-        !news       - Publish a gazette of all available headlines
-        !players    - Display the player mapping (may notify the users)
-        !op USER    - Add USER as an admin
-        !open       - Open bot to orders
-        !reveal     - Reveal all orders (only if closed)
-        !startpress - Allow news story submissions
-        !state      - Display the bot's state
-        !stoppress  - Cease allowing story submissions
+        !close         - Close bot to orders
+        !deop USER     - Remove USER as an admin
+        !help          - Display this message
+        !news          - Publish a gazette of all available headlines
+        !players       - Display the player mapping (may notify the users)
+        !op USER       - Add USER as an admin
+        !open          - Open bot to orders
+        !reveal        - Reveal all orders (only if closed)
+        !startpress    - Allow news story submissions
+        !state         - Display the bot's state
+        !stoppress     - Cease allowing story submissions
+        !unlock NATION - Unlock a nation's orders
         ```
       EOF
 
@@ -120,8 +125,8 @@ module Bot
       end
 
       if Util.orders_open?
-        countries = $redis.keys('orders:*').map { |key| key.split(':').last }
-        output << "I am accepting orders and have received them from #{Util.oxfordise(countries)}."
+        countries = $redis.keys('lock:*').map { |key| key.split(':').last }
+        output << "I have received locked-in orders from #{Util.oxfordise(countries)}."
       else
         output << 'I am not accepting orders.'
       end
@@ -140,6 +145,26 @@ module Bot
 
       Util.allow_news false
       @channel.msg 'Stop the presses!'
+    end
+
+    def unlock(nation)
+      dm_only!
+
+      locks = $redis.keys('lock:*').map { |key| key.split(':').last }
+
+      if locks.size == 0
+        @channel.msg 'No nations have locked in their orders'
+        return
+      end
+
+      unless locks.include? nation
+        @channel.msg "Invalid nation provided. Valid options are: #{Util.oxfordise(locks, 'or')}."
+        return
+      end
+
+      $redis.del "lock:#{nation}"
+
+      @channel.msg "Orders for #{nation} have been unlocked"
     end
   end
 end

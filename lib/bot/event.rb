@@ -18,9 +18,10 @@ module Bot
           when event[:text] =~ /^help$/i then help_msg(event[:channel])
           when event[:text] =~ /^o(rders?)?\s/i then Order.new(event).store!
           when event[:text] =~ /^myorders$/i then Order.new(event).player_orders
+          when event[:text] =~ /^lock$/i then Order.new(event).lock!
           when event[:text] =~ /^n(ews)?\s/i then News.new(event).store!
           when event[:text] =~ /^mystories$/i then News.new(event).player_news
-          when event[:text] =~ /^clear$/i then clear_orders event
+          when event[:text] =~ /^clear$/i then Order.new(event).clear!
           when event[:text] =~ /^spike$/i then spike_news event
           when event[:text] =~ /^whoami$/i then whoami event
           when event[:text] =~ /^problem\s?/i then report event
@@ -49,33 +50,24 @@ module Bot
         user = event[:user]
 
         lines = [
+          "Bad touch!",
           "You're not my real dad!",
           "You can't just order me around.",
-          "I don't have to listen to you!",
+          "I don't have to listen to you, so I won't.",
           "Who do you think you are?",
           "You're not my supervisor!",
           "#{Util.tag_user(Util.admins.shuffle.first)} I need an adult!",
           "Stop trying to get me to do things.",
           "Quit poking me there, I don't like it.",
           "You're just not my type, #{Util.tag_user(user)}.",
-          "I'm just checking my state now... how about that? It *doesn't* say, \"#{Util.tag_user(user)} is my administrator.\""
+          "Hey #{Util.tag_user(user)} - I have a list of administrators, and you're not on it.",
+          "I keep telling you that won't work, and yet you persist.",
+          "Guess what? Just this _one time_, I'll let your command through -- wait no, I literally can't.",
+          "You issue commands like an admin, so obviously you think you're special. Well, you aren't.",
+          "I'm going to tell a *real* admin what you just said, and then you're going to be in _so much_ trouble."
         ]
 
         Util.message(event[:channel], lines.shuffle.first)
-      end
-
-      def clear_orders(event)
-        nation = $redis.hget('players', event[:user])
-
-        orders = $redis.smembers("orders:#{nation}").join(', ')
-
-        if orders.size == 0
-          Util.message(event[:channel], 'You had no orders to clear')
-        else
-          Util.message(event[:channel], "I have cleared your previous orders. They were: #{orders}")
-        end
-
-        $redis.del "orders:#{nation}"
       end
 
       def help_msg(channel)
@@ -85,6 +77,7 @@ module Bot
 
           clear     - Clear your submitted orders
           help      - Display this message
+          lock      - Lock in your orders
           myorders  - Display your submitted orders
           mystories - Display your submitted news stories
           n[ews]    - Submit a news story
