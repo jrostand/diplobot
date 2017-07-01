@@ -20,7 +20,7 @@ module Bot
     end
 
     def method_missing(sym, *args)
-      Util.message(Util.im_channel(@user), "`#{@command}` is not a command")
+      @channel.msg "`#{@command}` is not a command"
     end
 
     def respond_to_missing?(sym, include_private = false)
@@ -28,6 +28,14 @@ module Bot
     end
 
     private
+
+    def admins
+      if Util.admins.length == 1
+        @channel.msg "My administrator is #{Util.oxfordise(Util.admin_tags)}."
+      else
+        @channel.msg "My administrators are #{Util.oxfordise(Util.admin_tags)}."
+      end
+    end
 
     def channel_only!
       raise InvalidChannelError if @channel.is_dm?
@@ -37,18 +45,11 @@ module Bot
       raise InvalidChannelError unless @channel.is_dm?
     end
 
-    def close
-      channel_only!
-
-      Util.allow_orders false
-      @channel.msg 'Orders are no longer being accepted'
-    end
-
     def deop(user)
       Util.remove_admin user
 
       @channel.msg "#{user} is no longer an administrator."
-    rescue Bot::InvalidUserError
+    rescue InvalidUserError
       @channel.msg "You cannot de-op the chief administrator."
 
       Util.message(
@@ -60,17 +61,14 @@ module Bot
     def help
       output = <<~EOF
         ```
-        !close         - Close bot to orders
         !deop USER     - Remove USER as an admin
         !help          - Display this message
         !news          - Publish a gazette of all available headlines
-        !players       - Display the player mapping (may notify the users)
         !op USER       - Add USER as an admin
-        !open          - Open bot to orders
-        !reveal        - Reveal all orders (only if closed)
-        !startpress    - Allow news story submissions
+        !phase PHASE   - Set game phase to PHASE
+                         (#{PhaseManager.new.phases.join('/')})
+        !players       - Display the player mapping (may notify the users)
         !state         - Display the bot's state
-        !stoppress     - Cease allowing story submissions
         !unlock NATION - Unlock a nation's orders
         ```
       EOF
@@ -90,32 +88,47 @@ module Bot
       @channel.msg "I have added #{user} as an administrator."
     end
 
-    def open
+    def phase(new_phase)
       channel_only!
 
-      Util.allow_orders true
-      @channel.msg 'I am now accepting orders'
+      phase_mgr = PhaseManager.new
+      phase_mgr.transition!(new_phase)
+
+      @channel.msg "Current game phase is: #{phase_mgr}"
+
+      case new_phase
+      when 'build'
+        @channel.msg 'Build/disband orders are being accepted'
+      when 'diplomacy'
+        @channel.msg 'Diplomacy is open and news submissions are being accepted'
+      when 'orders'
+        News.publish! @channel.id, true
+
+        @channel.msg 'I am now accepting general orders'
+      when 'retreat'
+        @channel.msg 'I am now accepting retreat orders'
+      when 'reveal'
+        Order.reveal! @channel.id
+
+        phase('resolution')
+      when 'wait'
+        @channel.msg 'The game is on hold until the scheduled start of the next phase'
+      end
+    rescue InvalidPhaseError
+      @channel.msg "`#{new_phase}` is not a valid game phase. Valid phases are `#{phase_mgr.phases.join(' ')}`."
+    rescue IllegalTransitionError
+      @channel.msg "Cannot transition from #{phase_mgr.current_phase} to #{new_phase}"
     end
 
     def players
       @channel.msg("My player map is ( #{ENV['USER_MAP']} ).")
     end
 
-    def reveal
-      channel_only!
-
-      Order.reveal! @channel.id
-    end
-
-    def startpress
-      channel_only!
-
-      Util.allow_news true
-      @channel.msg 'Extra! Extra! I am now accepting news submissions!'
-    end
-
     def state
       output = []
+      phase_mgr = PhaseManager.new
+
+      output << "The current phase is: #{phase_mgr}."
 
       if Util.news_open?
         keys = $redis.keys('news:*')
@@ -131,20 +144,7 @@ module Bot
         output << 'I am not accepting orders.'
       end
 
-      if Util.admins.length == 1
-        output << "My administrator is #{Util.oxfordise(Util.admin_tags)}."
-      else
-        output << "My administrators are #{Util.oxfordise(Util.admin_tags)}."
-      end
-
       @channel.msg output.join(' ')
-    end
-
-    def stoppress
-      channel_only!
-
-      Util.allow_news false
-      @channel.msg 'Stop the presses!'
     end
 
     def unlock(nation)

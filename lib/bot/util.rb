@@ -18,18 +18,6 @@ module Bot
         admins.map { |admin| tag_user(admin) }
       end
 
-      def allow_news(bool)
-        status = bool ? 'open' : 'closed'
-
-        $redis.set 'news_status', status
-      end
-
-      def allow_orders(bool)
-        status = bool ? 'open' : 'closed'
-
-        $redis.set 'orders_status', status
-      end
-
       def cache_users
         $users = client.users_list.members.map do |user|
           {
@@ -56,11 +44,11 @@ module Bot
       end
 
       def news_open?
-        $redis.get('news_status') == 'open'
+        PhaseManager.new.news?
       end
 
       def orders_open?
-        $redis.get('orders_status') == 'open'
+        PhaseManager.new.orders?
       end
 
       def oxfordise(list, join_word = 'and')
