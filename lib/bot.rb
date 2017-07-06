@@ -6,6 +6,7 @@ require_relative './bot/util'
 
 require_relative './bot/channel'
 require_relative './bot/knowledge'
+require_relative './bot/phase_manager'
 
 require_relative './bot/auth'
 require_relative './bot/responder'

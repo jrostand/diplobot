@@ -19,8 +19,8 @@ module Bot
       end
     end
 
-    def self.publish!(channel)
-      if !Util.news_open?
+    def self.publish!(channel, force = false)
+      if !force && !Util.news_open?
         Util.message channel, 'I cannot publish a gazette while the presses are stopped.'
         return
       end
