@@ -37,6 +37,7 @@ module Bot
     def to_s
       case current_phase
       when :build then 'Build/Disband'
+      when :demo then 'Bot Demonstration/Practice'
       when :diplomacy then 'Diplomacy'
       when :maps then 'Cartography'
       when :orders then 'Orders'
@@ -52,22 +53,23 @@ module Bot
     def allowed_transitions
       {
         build: [:diplomacy, :reveal],
+        demo: [:wait],
         diplomacy: [:orders],
         maps: [:diplomacy, :retreat, :build, :wait],
         orders: [:build, :maps, :resolution, :retreat, :reveal],
         resolution: [:build, :maps, :retreat, :wait],
         retreat: [:build, :maps, :reveal],
         reveal: [:build, :diplomacy, :maps, :resolution, :retreat, :wait],
-        wait: [:build, :diplomacy, :maps, :orders, :resolution, :retreat]
+        wait: [:build, :demo, :diplomacy, :maps, :orders, :resolution, :retreat]
       }
     end
 
     def news_phases
-      %w(diplomacy)
+      %w(demo diplomacy)
     end
 
     def orders_phases
-      %w(build orders retreat)
+      %w(build demo orders retreat)
     end
   end
 end
