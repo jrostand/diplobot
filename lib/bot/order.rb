@@ -12,6 +12,7 @@ module Bot
 
       if locked?
         msg 'You have locked in your orders and cannot clear them'
+        return
       elsif orders.size == 0
         msg 'You had no orders to clear'
       else
