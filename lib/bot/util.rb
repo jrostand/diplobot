@@ -87,6 +87,8 @@ module Bot
       end
 
       def user_id(username)
+        return username.scan(/[A-Z0-9]+/)[0] if username[0] == '<'
+
         if user = $users.find { |u| u[:username] == username }
           user[:id]
         else

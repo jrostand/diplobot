@@ -8,8 +8,6 @@ module Bot
 
         setup_admins!
 
-        map_users!
-
         ready_msg!
       end
 
@@ -18,22 +16,6 @@ module Bot
       def cache_users!
         Util.cache_users
         $im_cache = {}
-      end
-
-      def map_users!
-        $redis.del 'players'
-
-        raise 'No USER_MAP found' if ENV['USER_MAP'].nil?
-
-        users = ENV['USER_MAP'].split('|').map { |pair|
-          pair.split(':')
-        }.to_h
-
-        users.each do |username, nation|
-          uid = Util.user_id(username)
-
-          $redis.hset 'players', uid, nation
-        end
       end
 
       def ready_msg!

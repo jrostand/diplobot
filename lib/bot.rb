@@ -16,6 +16,8 @@ require_relative './bot/news'
 require_relative './bot/order'
 
 module Bot
+  NATIONS = %w(Austria England France Germany Italy Russia Turkey)
+
   Config.start!
   Knowledge.learn!
 end
