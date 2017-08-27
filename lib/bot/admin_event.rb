@@ -67,7 +67,7 @@ module Bot
         !op USER            - Add USER as an admin
         !phase PHASE        - Set game phase to PHASE (#{PhaseManager.new.phases.join('/')})
         !player USER NATION - Set player of NATION to USER
-        !players            - Display the player mapping (may notify the users)
+        !players            - Display the player mapping (notifies the users)
         !state              - Display the bot's state
         !unlock NATION      - Unlock a nation's orders
         !unplayer USER      - Remove USER (and their nation) from the game
@@ -136,7 +136,19 @@ module Bot
     end
 
     def players
-      @channel.msg("My player map is ( #{ENV['USER_MAP']} ).")
+      if $redis.hlen('players') == 0
+        output = 'There are no mapped players.'
+      else
+        output = "```\n"
+
+        $redis.hgetall('players').each do |user, nation|
+          output += "#{nation}: #{Util.tag_user(user)}\n"
+        end
+
+        output += '```'
+      end
+
+      @channel.msg(output)
     end
 
     def state
