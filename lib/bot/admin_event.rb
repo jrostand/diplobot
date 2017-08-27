@@ -191,7 +191,7 @@ module Bot
     rescue InvalidUserError
       players = $redis.hkeys('players').map { |user| Util.tag_user(user) }
 
-      @channel.msg "#{Util.tag_user(username)} is not a player. Valid options are #{Util.oxfordise(players), 'or')}."
+      @channel.msg "#{Util.tag_user(username)} is not a player. Valid options are #{Util.oxfordise(players, 'or')}."
     end
   end
 end
