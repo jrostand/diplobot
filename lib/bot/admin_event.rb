@@ -61,15 +61,16 @@ module Bot
     def help
       output = <<~EOF
         ```
-        !deop USER     - Remove USER as an admin
-        !help          - Display this message
-        !news          - Publish a gazette of all available headlines
-        !op USER       - Add USER as an admin
-        !phase PHASE   - Set game phase to PHASE
-                         (#{PhaseManager.new.phases.join('/')})
-        !players       - Display the player mapping (may notify the users)
-        !state         - Display the bot's state
-        !unlock NATION - Unlock a nation's orders
+        !deop USER          - Remove USER as an admin
+        !help               - Display this message
+        !news               - Publish a gazette of all available headlines
+        !op USER            - Add USER as an admin
+        !phase PHASE        - Set game phase to PHASE (#{PhaseManager.new.phases.join('/')})
+        !player USER NATION - Set player of NATION to USER
+        !players            - Display the player mapping (may notify the users)
+        !state              - Display the bot's state
+        !unlock NATION      - Unlock a nation's orders
+        !unplayer USER      - Remove USER (and their nation) from the game
         ```
       EOF
 
@@ -120,6 +121,20 @@ module Bot
       @channel.msg "Cannot transition from #{phase_mgr.current_phase} to #{new_phase}"
     end
 
+    def player(username, nation)
+      raise InvalidNationError unless NATIONS.include?(nation)
+
+      user_id = Util.user_id(username)
+
+      $redis.hset('players', user_id, nation)
+
+      @channel.msg "#{Util.tag_user(username)} is now controlling #{nation}"
+    rescue InvalidNationError
+      @channel.msg "#{nation} is not a recognized nation. Valid options are #{Util.oxfordise(NATIONS, 'or')}."
+    rescue NotFoundError => e
+      @channel.msg e.message
+    end
+
     def players
       @channel.msg("My player map is ( #{ENV['USER_MAP']} ).")
     end
@@ -133,15 +148,11 @@ module Bot
       if Util.news_open?
         keys = $redis.keys('news:*')
         output << "There are #{keys.size == 0 ? 'no' : $redis.sunion(*keys).size} news stories ready for the gazette."
-      else
-        output << 'The presses are stopped.'
       end
 
       if Util.orders_open?
         countries = $redis.keys('lock:*').map { |key| key.split(':').last }
         output << "I have received locked-in orders from #{Util.oxfordise(countries)}."
-      else
-        output << 'I am not accepting orders.'
       end
 
       @channel.msg output.join(' ')
@@ -165,6 +176,22 @@ module Bot
       $redis.del "lock:#{nation}"
 
       @channel.msg "Orders for #{nation} have been unlocked"
+    end
+
+    def unplayer(username)
+      uid = Util.user_id(username)
+
+      raise InvalidUserError unless $redis.hkeys('players').include?(uid)
+
+      nation = $redis.hget('players', uid)
+
+      $redis.hdel('players', uid)
+
+      @channel.msg "#{Util.tag_user(uid)} is no longer playing as #{nation}."
+    rescue InvalidUserError
+      players = $redis.hkeys('players').map { |user| Util.tag_user(user) }
+
+      @channel.msg "#{Util.tag_user(username)} is not a player. Valid options are #{Util.oxfordise(players), 'or')}."
     end
   end
 end
