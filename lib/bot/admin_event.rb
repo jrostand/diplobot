@@ -126,11 +126,17 @@ module Bot
 
       user_id = Util.user_id(username)
 
-      $redis.hset('players', user_id, nation)
+      raise InvalidUserError if $redis.hvals('players').include?(user_id)
+
+      $redis.hset('players', nation, user_id)
 
       @channel.msg "#{Util.tag_user(username)} is now controlling #{nation}"
     rescue InvalidNationError
       @channel.msg "#{nation} is not a recognized nation. Valid options are #{Util.oxfordise(NATIONS, 'or')}."
+    rescue InvalidUserError
+      user_nation = $redis.hgetall('players').invert[user_id]
+
+      @channel.msg "#{Util.tag_user(user_id)} is already playing as #{user_nation}."
     rescue NotFoundError => e
       @channel.msg e.message
     end
@@ -141,7 +147,7 @@ module Bot
       else
         output = "```\n"
 
-        $redis.hgetall('players').each do |user, nation|
+        $redis.hgetall('players').each do |nation, user|
           output += "#{nation}: #{Util.tag_user(user)}\n"
         end
 
@@ -193,17 +199,19 @@ module Bot
     def unplayer(username)
       uid = Util.user_id(username)
 
-      raise InvalidUserError unless $redis.hkeys('players').include?(uid)
+      raise InvalidUserError unless $redis.hvals('players').include?(uid)
 
-      nation = $redis.hget('players', uid)
+      reverse_hash = $redis.hgetall('players').invert
 
-      $redis.hdel('players', uid)
+      nation = reverse_hash[uid]
+
+      $redis.hdel('players', nation)
 
       @channel.msg "#{Util.tag_user(uid)} is no longer playing as #{nation}."
     rescue InvalidUserError
-      players = $redis.hkeys('players').map { |user| Util.tag_user(user) }
+      players = $redis.hvals('players').map { |user| Util.tag_user(user) }
 
-      @channel.msg "#{Util.tag_user(username)} is not a player. Valid options are #{Util.oxfordise(players, 'or')}."
+      @channel.msg "#{Util.tag_user(uid)} is not a player. Valid options are #{Util.oxfordise(players, 'or')}."
     end
   end
 end
