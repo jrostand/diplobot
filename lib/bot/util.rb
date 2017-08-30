@@ -40,7 +40,7 @@ module Bot
       end
 
       def is_player?(uid)
-        $redis.hkeys('players').include? uid
+        $redis.hvals('players').include? uid
       end
 
       def news_open?
