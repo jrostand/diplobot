@@ -101,7 +101,7 @@ module Bot
       end
 
       def spike_news(event)
-        nation = $redis.hget('players', event[:user])
+        nation = $redis.hgetall('players').invert[event[:user]]
 
         stories = $redis.smembers("news:#{nation}").join(', ')
 
@@ -115,7 +115,7 @@ module Bot
       end
 
       def whoami(event)
-        nation = $redis.hget('players', event[:user])
+        nation = $redis.hgetall('players').invert[event[:user]]
 
         Util.message(event[:channel], "My user mapping says that you are #{nation}. Contact #{Util.oxfordise(Util.admin_tags, 'or')} if this is not correct.")
       end

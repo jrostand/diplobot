@@ -114,7 +114,7 @@ module Bot
     end
 
     def nation
-      @nation ||= $redis.hget 'players', @uid
+      @nation ||= $redis.hgetall('players').invert[@uid]
     end
 
     def store_orders
