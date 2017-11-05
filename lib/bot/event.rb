@@ -9,7 +9,7 @@ module Bot
         when event[:text][0] == '!'
           AdminEvent.new event
         when event[:channel][0] == 'D'
-          if !Util.is_player?(event[:user])
+          if !Util.is_player?(event[:user]) && event[:text] !~ /^hugs?$/i
             Util.message event[:channel], "I don't have you registered as a player. Contact #{Util.oxfordise(Util.admin_tags, 'or')} if this is not correct."
             return
           end
@@ -25,6 +25,7 @@ module Bot
           when event[:text] =~ /^spike$/i then spike_news event
           when event[:text] =~ /^whoami$/i then whoami event
           when event[:text] =~ /^problem\s?/i then report event
+          when event[:text] =~ /^hugs?$/i then hug event
           else
             Util.message event[:channel], "I don't know what you meant by \"#{event[:text]}\""
           end
@@ -77,6 +78,7 @@ module Bot
 
           clear     - Clear your submitted orders
           help      - Display this message
+          hug       - ¯\\_(ツ)_/¯
           lock      - Lock in your orders
           myorders  - Display your submitted orders
           mystories - Display your submitted news stories
@@ -89,6 +91,30 @@ module Bot
         EOF
 
         Util.message(channel, output)
+      end
+
+      def hug(event)
+        things = [
+          'https://i.chzbgr.com/full/8432724224/h2019AEDD.gif',
+          'https://i.imgur.com/KGoEhLk.gif',
+          'http://78.media.tumblr.com/3644cd3a73d4dd6ffbb18c65ad604988/tumblr_newvpiMsl11t4twpao1_1280.gif',
+          'https://i.imgur.com/anqcRxv.gif',
+          'https://i.imgur.com/8tEQrg3.gif',
+          'http://www.reactiongifs.com/r/ywh.gif',
+          'http://www.reactiongifs.com/r/nmrd.gif',
+          'https://i.giphy.com/media/vRCSquxM3el6U/giphy.gif',
+          'https://i.giphy.com/media/9MOUgVgxPBcL6/giphy.gif',
+          'https://i.giphy.com/media/l0HlvU6gXnZHwnB3a/giphy.gif',
+          'https://i.giphy.com/media/AU9st1hWuzMwU/giphy.gif',
+          'https://i.giphy.com/media/1gbQIeNzZxcSk/giphy.gif'
+        ]
+
+        Karma.increment(event[:user])
+        Util.message(event[:channel], things.shuffle.first)
+        Util.message(
+          Util.im_channel($chief_admin),
+          "I got a hug from #{Util.tag_user(event[:user])}! Their karma is now #{Karma.of(event[:user])}."
+        )
       end
 
       def report(event)
