@@ -19,9 +19,9 @@ module Bot
       end
 
       def ready_msg!
-        imid = Util.im_channel $chief_admin
+        channel = Util.im_channel $chief_admin
 
-        #Util.message imid, 'DiploBot is ready for commands. You are the chief administrator.'
+        channel.msg 'DiploBot is ready for commands. You are the chief administrator.'
       end
 
       def setup_admins!
