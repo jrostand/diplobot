@@ -1,10 +1,9 @@
 module Bot
-  class Order
+  class Order < BaseModule
     def initialize(event)
-      @event = event
-      @channel = @event[:channel]
-      @text = @event[:text].split[1..-1].join(' ')
-      @uid = @event[:user]
+      super event
+
+      @text = @text.split.drop(1).join(' ')
     end
 
     def clear!
@@ -37,10 +36,6 @@ module Bot
       $redis.set "lock:#{nation}", 'true'
       msg 'Your orders have been locked in'
       player_orders
-    end
-
-    def locked?
-      !!$redis.get("lock:#{nation}")
     end
 
     def player_orders
@@ -109,12 +104,16 @@ module Bot
       output.join("\n")
     end
 
+    def locked?
+      !!$redis.get("lock:#{nation}")
+    end
+
     def msg(text)
-      Util.message(@channel, text)
+      @channel.msg text
     end
 
     def nation
-      @nation ||= $redis.hgetall('players').invert[@uid]
+      @nation ||= @user.nation
     end
 
     def store_orders

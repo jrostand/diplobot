@@ -1,28 +1,30 @@
 module Bot
   class Karma
     class << self
-      def increment(user)
-        unless has_karma?(user)
-          make_karma(user)
+      def all
+        if $redis.hkeys('karma').size == 0
+          return 'No users have any karma.'
         end
 
-        karma = of(user) + 1
+        str = ''
 
-        $redis.set("karma:#{user}", karma)
+        $redis.hgetall('karma').each do |k, v|
+          str += "#{Util.tag_user(k)}\t\t#{v}\n"
+        end
+
+        "```#{str}```"
+      end
+
+      def decrement(user, step = 1)
+        $redis.hincrby('karma', user, (step * -1))
+      end
+
+      def increment(user, step = 1)
+        $redis.hincrby('karma', user, step)
       end
 
       def of(user)
-        $redis.get("karma:#{user}").to_i
-      end
-
-      protected
-
-      def has_karma?(user)
-        $redis.exists "karma:#{user}"
-      end
-
-      def make_karma(user)
-        $redis.set "karma:#{user}", 0
+        $redis.hget('karma', user)
       end
     end
   end

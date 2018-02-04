@@ -7,11 +7,15 @@ module Bot
       @id = event[:channel]
     end
 
-    def is_dm?
+    def self.new_by_id(id)
+      new({ channel: id })
+    end
+
+    def dm?
       id[0] == 'D'
     end
 
-    def is_public?
+    def public?
       id[0] == 'C'
     end
 

@@ -27,12 +27,10 @@ module Bot
         end
       end
 
-      def im_channel(uid)
-        unless $im_cache[uid]
-          $im_cache[uid] = client.im_list.ims.find { |i| i.user == uid }.id
-        end
-
-        $im_cache[uid]
+      def im_channel(user)
+        $im_cache[user.id] ||= Channel.new_by_id(
+          client.im_list.ims.find { |i| i.user == user.id }.id
+        )
       end
 
       def is_admin?(uid)

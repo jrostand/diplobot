@@ -1,32 +1,35 @@
 module Bot
-  class News
-    def initialize(event)
-      @event = event
-      @channel = @event[:channel]
-      @text = @event[:text].split[1..-1].join(' ')
-      @uid = @event[:user]
+  class News < BaseModule
+    class << self
+      def count_for(nation)
+        $redis.scard("news:#{nation}")
+      end
+
+      def for(nation)
+        $redis.smembers("news:#{nation}").join(', ')
+      end
     end
 
     def player_news
-      stories = $redis.smembers "news:#{nation}"
+      stories = $redis.smembers "news:#{@user.nation}"
 
       if !Util.news_open?
-        msg 'The presses are currently stopped.'
+        @channel.msg 'The presses are currently stopped.'
       elsif stories.size == 0
-        msg 'You have not submitted any stories.'
+        @channel.msg 'You have not submitted any stories.'
       else
-        msg "_Here are your current stories as they will appear in the gazette_\n#{News.format(nation, stories)}"
+        @channel.msg "_Here are your current stories as they will appear in the gazette_\n#{News.format(@user.nation, stories)}"
       end
     end
 
     def self.publish!(channel, force = false)
       if !force && !Util.news_open?
-        Util.message channel, 'I cannot publish a gazette while the presses are stopped.'
+        channel.msg 'I cannot publish a gazette while the presses are stopped.'
         return
       end
 
       if $redis.keys('news:*').size == 0
-        Util.message channel, 'I do not have any stories to publish.'
+        channel.msg 'I do not have any stories to publish.'
         return
       end
 
@@ -41,14 +44,24 @@ module Bot
         $redis.del key
       end
 
-      Util.message channel, output.join("\n")
+      channel.msg output.join("\n")
+    end
+
+    def spike!
+      nation = @user.nation
+
+      if News.count_for(nation) == 0
+        @channel.msg 'You had no stories to spike'
+      else
+        @channel.msg "I spiked your headline. It was: #{$redis.spop "news:#{nation}"}"
+      end
     end
 
     def store!
       if Util.news_open?
         store_story
       else
-        msg 'I am not currently accepting news stories'
+        @channel.msg 'I am not currently accepting news stories'
       end
     end
 
@@ -62,19 +75,12 @@ module Bot
       output.join("\n")
     end
 
-    def msg(text)
-      Util.message(@channel, text)
-    end
-
-    def nation
-      @nation ||= $redis.hgetall('players').invert[@uid]
-    end
-
     def store_story
-      if $redis.sadd "news:#{nation}", @text
-        msg "I have stored your \"#{@text}\" story"
+      text = @text.split.drop(1).join(' ')
+      if $redis.sadd "news:#{@user.nation}", text
+        @channel.msg "I have stored your \"#{text}\" story"
       else
-        msg "It looks like I already had \"#{@text}\" stored. You can say `mystories` to see your current news stories."
+        @channel.msg "It looks like I already had \"#{text}\" stored. You can say `mynews` to see your current news stories."
       end
     end
   end

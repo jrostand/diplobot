@@ -1,12 +1,10 @@
 module Bot
-  class AdminEvent
+  class AdminEvent < BaseModule
     def initialize(event)
-      @channel = Channel.new(event)
-      @text = event[:text]
-      @user = event[:user]
+      super event
 
-      unless Util.is_admin?(@user)
-        if @channel.is_dm?
+      unless @user.admin?
+        if @channel.dm?
           raise InvalidChannelError
         else
           raise NotAuthorizedError
@@ -15,7 +13,9 @@ module Bot
 
       @command = @text.split.first.sub(/!/, '')
       @args = @text.split.drop(1)
+    end
 
+    def dispatch!
       method(@command.to_sym).call(*@args)
     end
 
@@ -38,11 +38,11 @@ module Bot
     end
 
     def channel_only!
-      raise InvalidChannelError if @channel.is_dm?
+      raise InvalidChannelError if @channel.dm?
     end
 
     def dm_only!
-      raise InvalidChannelError unless @channel.is_dm?
+      raise InvalidChannelError unless @channel.dm?
     end
 
     def deop(user)
@@ -52,8 +52,7 @@ module Bot
     rescue InvalidUserError
       @channel.msg "You cannot de-op the chief administrator."
 
-      Util.message(
-        Util.im_channel($chief_admin),
+      Util.im_channel($chief_admin).msg(
         "#{Util.tag_user(@user)} tried to de-op you. I won't let that happen."
       )
     end
@@ -80,7 +79,7 @@ module Bot
     def news
       channel_only!
 
-      News.publish! @channel.id
+      News.publish! @channel
     end
 
     def op(user)
@@ -92,33 +91,8 @@ module Bot
     def phase(new_phase)
       channel_only!
 
-      phase_mgr = PhaseManager.new
+      phase_mgr = PhaseManager.new(@channel)
       phase_mgr.transition!(new_phase)
-
-      @channel.msg "Current game phase is: #{phase_mgr}"
-
-      case new_phase
-      when 'build'
-        @channel.msg 'Build/disband orders are being accepted'
-      when 'diplomacy'
-        @channel.msg 'Diplomacy is open and news submissions are being accepted'
-      when 'orders'
-        News.publish! @channel.id, true
-
-        @channel.msg 'I am now accepting general orders'
-      when 'retreat'
-        @channel.msg 'I am now accepting retreat orders'
-      when 'reveal'
-        Order.reveal! @channel.id
-
-        phase('resolution')
-      when 'wait'
-        @channel.msg 'The game is on hold until the scheduled start of the next phase'
-      end
-    rescue InvalidPhaseError
-      @channel.msg "`#{new_phase}` is not a valid game phase. Valid phases are `#{phase_mgr.phases.join(' ')}`."
-    rescue IllegalTransitionError
-      @channel.msg "Cannot transition from #{phase_mgr.current_phase} to #{new_phase}"
     end
 
     def player(username, nation)
@@ -157,9 +131,19 @@ module Bot
       @channel.msg(output)
     end
 
+    def require_karma!(karma)
+      return if @user.admin?
+
+      raise NotAuthorizedError unless @user.karma >= karma
+
+      @user.karma.decrement(karma)
+    end
+
     def state
+      require_karma! 5
+
       output = []
-      phase_mgr = PhaseManager.new
+      phase_mgr = PhaseManager.new(@channel)
 
       output << "The current phase is: #{phase_mgr}."
 

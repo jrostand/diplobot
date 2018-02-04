@@ -10,7 +10,14 @@ module Bot
       if data[:type] == 'url_verification'
         body data[:challenge]
       elsif data[:type] == 'event_callback' && data[:event][:type] == 'message'
-        Event.dispatch(data[:event])
+        event = data[:event]
+
+        return if event[:bot_id] || event[:user] == $redis.get('bot_user')
+        return unless event[:text]
+
+        msg = Message.new(event)
+
+        Event.new(msg).dispatch!
       else
         puts 'Got unexpected event:'
         puts JSON.pretty_generate(data)
