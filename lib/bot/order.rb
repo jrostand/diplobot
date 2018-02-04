@@ -1,10 +1,9 @@
 module Bot
-  class Order
+  class Order < BaseModule
     def initialize(event)
-      @event = event
-      @channel = @event[:channel]
-      @text = @event[:text].split[1..-1].join(' ')
-      @uid = @event[:user]
+      super event
+
+      @text = @text.split.drop(1).join(' ')
     end
 
     def clear!
@@ -39,10 +38,6 @@ module Bot
       player_orders
     end
 
-    def locked?
-      !!$redis.get("lock:#{nation}")
-    end
-
     def player_orders
       orders = $redis.smembers "orders:#{nation}"
 
@@ -57,17 +52,17 @@ module Bot
 
     def self.reveal!(channel)
       if Util.orders_open?
-        Util.message channel, 'I cannot reveal orders while orders are still open'
+        channel.msg 'I cannot reveal orders while orders are still open'
         return
       end
 
       if $redis.keys('lock:*').size == 0
-        Util.message channel, 'No nation locked in their orders, all units will *hold*.'
+        channel.msg 'No nation locked in their orders, all units will *hold*.'
         return
       end
 
       if $redis.keys('orders:*').size == 0
-        Util.message channel, "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($chief_admin)} I'm scared! :fearful: :fearful: :fearful:"
+        channel.msg "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($chief_admin)} I'm scared! :fearful: :fearful: :fearful:"
         return
       end
 
@@ -83,7 +78,7 @@ module Bot
       $redis.del(*$redis.keys('orders:*'))
       $redis.del(*$redis.keys('lock:*'))
 
-      Util.message channel, output.join("\n")
+      channel.msg output.join("\n")
     end
 
     def store!
@@ -109,12 +104,16 @@ module Bot
       output.join("\n")
     end
 
+    def locked?
+      !!$redis.get("lock:#{nation}")
+    end
+
     def msg(text)
-      Util.message(@channel, text)
+      @channel.msg text
     end
 
     def nation
-      @nation ||= $redis.hgetall('players').invert[@uid]
+      @nation ||= @user.nation
     end
 
     def store_orders
