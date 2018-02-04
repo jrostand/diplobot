@@ -52,17 +52,17 @@ module Bot
 
     def self.reveal!(channel)
       if Util.orders_open?
-        Util.message channel, 'I cannot reveal orders while orders are still open'
+        channel.msg 'I cannot reveal orders while orders are still open'
         return
       end
 
       if $redis.keys('lock:*').size == 0
-        Util.message channel, 'No nation locked in their orders, all units will *hold*.'
+        channel.msg 'No nation locked in their orders, all units will *hold*.'
         return
       end
 
       if $redis.keys('orders:*').size == 0
-        Util.message channel, "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($chief_admin)} I'm scared! :fearful: :fearful: :fearful:"
+        channel.msg "I did not receive any orders! Did something go wrong? Please help #{Util.tag_user($chief_admin)} I'm scared! :fearful: :fearful: :fearful:"
         return
       end
 
@@ -78,7 +78,7 @@ module Bot
       $redis.del(*$redis.keys('orders:*'))
       $redis.del(*$redis.keys('lock:*'))
 
-      Util.message channel, output.join("\n")
+      channel.msg output.join("\n")
     end
 
     def store!

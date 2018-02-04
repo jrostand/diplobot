@@ -53,7 +53,7 @@ module Bot
       @channel.msg "You cannot de-op the chief administrator."
 
       Util.im_channel($chief_admin).msg(
-        "#{Util.tag_user(@user)} tried to de-op you. I won't let that happen."
+        "#{@user} tried to de-op you. I won't let that happen."
       )
     end
 

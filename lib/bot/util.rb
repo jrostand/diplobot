@@ -63,29 +63,21 @@ module Bot
       def remove_admin(username)
         uid = user_id(username)
 
-        raise InvalidUserError if uid == $chief_admin
+        raise InvalidUserError if uid == $chief_admin.id
 
         $redis.srem('admins', uid)
       end
 
       def tag_user(user)
-        unless user =~ /^U/
+        unless user.start_with? 'U'
           user = user_id(user)
         end
 
         "<@#{user}>"
       end
 
-      def user_im_channel(username)
-        begin
-          im_channel(user_id(username))
-        rescue => e
-          raise "Could not find expected user #{username}"
-        end
-      end
-
       def user_id(username)
-        return username.scan(/[A-Z0-9]+/)[0] if username[0] == '<'
+        return username.scan(/[A-Z0-9]+/)[0] if username.start_with? '<'
 
         if user = $users.find { |u| u[:username] == username }
           user[:id]
@@ -93,6 +85,14 @@ module Bot
           cache_users
 
           $users.find { |u| u[:username] == username }[:id] || raise(NotFoundError, "Could not find user `#{username}`")
+        end
+      end
+
+      def user_im_channel(username)
+        begin
+          im_channel(user_id(username))
+        rescue => e
+          raise "Could not find expected user #{username}"
         end
       end
 

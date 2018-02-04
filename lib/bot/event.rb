@@ -106,6 +106,8 @@ module Bot
 
       @user.karma.increment
       @channel.msg hugs.shuffle.first
+    rescue KarmaDecayError => e
+      @channel.msg "I'm feeling a bit hugged-out. I just need some space for a few minutes."
     end
     alias_method :hugs, :hug
 

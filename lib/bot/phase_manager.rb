@@ -44,22 +44,22 @@ module Bot
       when :diplomacy
         @channel.msg 'Diplomacy is open and news submissions are being accepted'
       when :orders
-        News.publish! @channel.id, true
+        News.publish! @channel, true
 
         @channel.msg 'I am now accepting general orders'
       when :retreat
         @channel.msg 'I am now accepting retreat orders'
       when :reveal
-        Order.reveal! @channel.id
+        Order.reveal! @channel
 
-        phase('resolution')
+        transition!('resolution')
       when 'wait'
         @channel.msg 'The game is on hold until the scheduled start of the next phase'
       end
     rescue InvalidPhaseError
-      @channel.msg "`#{new_phase}` is not a valid game phase. Valid phases are `#{phase_mgr.phases.join(' ')}`."
+      @channel.msg "`#{new_phase}` is not a valid game phase. Valid phases are `#{phases.join(' ')}`."
     rescue IllegalTransitionError
-      @channel.msg "Cannot transition from #{phase_mgr.current_phase} to #{new_phase}"
+      @channel.msg "Cannot transition from #{current_phase} to #{new_phase}"
     rescue NoChannelError
       Util.im_channel($chief_admin).msg(
         'Cannot initiate a transition without a channel'
@@ -89,7 +89,7 @@ module Bot
         diplomacy: [:orders],
         maps: [:diplomacy, :retreat, :build, :wait],
         orders: [:build, :maps, :resolution, :retreat, :reveal],
-        resolution: [:build, :maps, :retreat, :wait],
+        resolution: [:build, :diplomacy, :maps, :retreat, :wait],
         retreat: [:build, :maps, :reveal],
         reveal: [:build, :diplomacy, :maps, :resolution, :retreat, :wait],
         wait: [:build, :demo, :diplomacy, :maps, :orders, :resolution, :retreat]
