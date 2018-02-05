@@ -16,8 +16,6 @@ module Bot
         AdminEvent.new(@event).dispatch!
       elsif @event.channel.dm?
         method(@command.to_sym).call(*@args)
-      else
-        raise NoMethodError
       end
     rescue InvalidChannelError => e
       @channel.msg "`#{@command}` doesn't work here."
