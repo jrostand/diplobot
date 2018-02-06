@@ -3,22 +3,22 @@ module Bot
     def initialize(event)
       super event
 
-      raise InvalidUserError unless @user.player? || @text =~ /^hugs?$/i
-
       @command = @text.split.first.sub(/!/, '')
       @args = @text.split.drop(1)
-    rescue InvalidUserError => e
-      @channel.msg "I don't have you registered as a player. Contact #{Util.oxfordise(Util.admin_tags, 'or')} if this is not correct."
     end
 
     def dispatch!
       if @event.admin_command?
         AdminEvent.new(@event).dispatch!
       elsif @event.channel.dm?
+        raise InvalidUserError unless @user.player? || @text =~ /^hugs?$/i
+
         method(@command.to_sym).call(*@args)
       end
     rescue InvalidChannelError => e
       @channel.msg "`#{@command}` doesn't work here."
+    rescue InvalidUserError => e
+      @channel.msg "I don't have you registered as a player. Contact #{Util.oxfordise(Util.admin_tags, 'or')} if this is not correct."
     rescue NotAuthorizedError => e
       abuse!
     rescue => e
