@@ -27,6 +27,7 @@ module Bot
       def setup_admins!
         chief_id = Util.user_id(ENV['CHIEF_ADMIN'])
 
+        $redis.del 'admins'
         $redis.sadd 'admins', chief_id
 
         $chief_admin = User.new_by_id(chief_id)

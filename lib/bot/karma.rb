@@ -1,5 +1,10 @@
 module Bot
   class Karma
+
+    # Karma change timeouts (seconds)
+    DECREMENT_TIMEOUT = 120
+    INCREMENT_TIMEOUT = 600
+
     class << self
       def all
         if $redis.hkeys('karma').size == 0
@@ -15,11 +20,21 @@ module Bot
         "```#{str}```"
       end
 
-      def can_incr?(user)
-        Time.now.to_i - last_of(user) >= 600
+      def can_decr?(user)
+        Time.now.to_i - last_of(user) >= INCREMENT_TIMEOUT
       end
 
-      def decrement(user, step = 1)
+      def can_incr?(user)
+        Time.now.to_i - last_of(user) >= INCREMENT_TIMEOUT
+      end
+
+      def decrement(user, step = 1, force = false)
+        if $redis.hexists('last_karma', user) && force == false
+          raise KarmaDecayError unless can_decr?(user)
+        end
+
+        $redis.hset('last_karma', user, Time.now.to_i)
+
         $redis.hincrby('karma', user, (step * -1))
       end
 

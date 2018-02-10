@@ -3,7 +3,7 @@ module Bot
     def initialize(event)
       super event
 
-      @command = @text.split.first.sub(/!/, '')
+      @command = @text.split.first.downcase.sub(/!/, '')
       @args = @text.split.drop(1)
     end
 
@@ -11,7 +11,7 @@ module Bot
       if @event.admin_command?
         AdminEvent.new(@event).dispatch!
       elsif @event.channel.dm?
-        raise InvalidUserError unless @user.player? || @text =~ /^hugs?$/i
+        raise InvalidUserError unless @user.player? || @text =~ /^hugs?$|^karma$/i
 
         method(@command.to_sym).call(*@args)
       end
@@ -56,7 +56,7 @@ module Bot
         "I'm going to tell a *real* admin what you just said, and then you're going to be in _so much_ trouble."
       ]
 
-      @user.karma.decrement 3
+      @user.karma.decrement 3, true
       @channel.msg lines.shuffle.first
     end
 

@@ -3,20 +3,14 @@ module Bot
     def initialize(event)
       super event
 
-      unless @user.admin?
-        if @channel.dm?
-          raise InvalidChannelError
-        else
-          raise NotAuthorizedError
-        end
-      end
-
-      @command = @text.split.first.sub(/!/, '')
+      @command = @text.split.first.downcase.sub(/!/, '')
       @args = @text.split.drop(1)
     end
 
     def dispatch!
       method(@command.to_sym).call(*@args)
+    rescue KarmaDecayError => e
+      @channel.msg "You've done too much for now. Wait a few minutes."
     end
 
     def method_missing(sym, *args)
@@ -29,7 +23,19 @@ module Bot
 
     private
 
+    def admin_only!
+      unless @user.admin?
+        if @channel.dm?
+          raise InvalidChannelError
+        else
+          raise NotAuthorizedError
+        end
+      end
+    end
+
     def admins
+      admin_only!
+
       if Util.admins.length == 1
         @channel.msg "My administrator is #{Util.oxfordise(Util.admin_tags)}."
       else
@@ -46,6 +52,8 @@ module Bot
     end
 
     def deop(user)
+      admin_only!
+
       Util.remove_admin user
 
       @channel.msg "#{user} is no longer an administrator."
@@ -58,6 +66,8 @@ module Bot
     end
 
     def help
+      admin_only!
+
       output = <<~EOF
         ```
         !deop USER          - Remove USER as an admin
@@ -78,17 +88,21 @@ module Bot
 
     def news
       channel_only!
+      require_karma! 10
 
       News.publish! @channel
     end
 
     def op(user)
+      admin_only!
+
       Util.add_admin user
 
       @channel.msg "I have added #{user} as an administrator."
     end
 
     def phase(new_phase)
+      admin_only!
       channel_only!
 
       phase_mgr = PhaseManager.new(@channel)
@@ -96,6 +110,8 @@ module Bot
     end
 
     def player(username, nation)
+      admin_only!
+
       raise InvalidNationError unless NATIONS.include?(nation)
 
       user_id = Util.user_id(username)
@@ -116,6 +132,12 @@ module Bot
     end
 
     def players
+      if @channel.dm?
+        require_karma! 2
+      else
+        admin_only!
+      end
+
       if $redis.hlen('players') == 0
         output = 'There are no mapped players.'
       else
@@ -134,7 +156,7 @@ module Bot
     def require_karma!(karma)
       return if @user.admin?
 
-      raise NotAuthorizedError unless @user.karma >= karma
+      raise NotAuthorizedError unless @user.karma.to_i >= karma
 
       @user.karma.decrement(karma)
     end
@@ -161,6 +183,7 @@ module Bot
     end
 
     def unlock(nation)
+      admin_only!
       dm_only!
 
       locks = $redis.keys('lock:*').map { |key| key.split(':').last }
@@ -181,6 +204,8 @@ module Bot
     end
 
     def unplayer(username)
+      admin_only!
+
       uid = Util.user_id(username)
 
       raise InvalidUserError unless $redis.hvals('players').include?(uid)
