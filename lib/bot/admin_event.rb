@@ -88,7 +88,7 @@ module Bot
 
     def news
       channel_only!
-      require_karma! 10
+      require_karma! 2
 
       News.publish! @channel
     end
@@ -158,11 +158,11 @@ module Bot
 
       raise NotAuthorizedError unless @user.karma.to_i >= karma
 
-      @user.karma.decrement(karma)
+      @user.karma.decrement([2, karma].min)
     end
 
     def state
-      require_karma! 5
+      require_karma! 6
 
       output = []
       phase_mgr = PhaseManager.new(@channel)
